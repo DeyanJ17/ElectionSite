@@ -61,7 +61,7 @@ def get_results(presidential_polls):
             lead = round(result[0] - result[1], 2)
             if lead < 0:
                 lead = abs(lead)
-                if lead <= 3:
+                if lead <= 3.5:
                     color = "#FF474C"
                     formatted[state] = [state_results[state], "R +" + str(lead), color]
                 elif lead > 3.5 and lead <= 7.5:
