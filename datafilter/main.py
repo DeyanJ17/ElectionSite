@@ -19,9 +19,9 @@ def get_new_json(date):
         polls_data = []
 
     presidential_polls = []
-    year = date[0]
-    month = date[1]
-    day = date[2]
+    year = date[2]
+    month = date[0]
+    day = date[1]
 
     for poll in polls_data:
         poll_start_date = datetime.strptime(poll['startDate'], "%Y-%m-%d").date()
@@ -61,30 +61,32 @@ def get_results(presidential_polls):
             lead = round(result[0] - result[1], 2)
             if lead < 0:
                 lead = abs(lead)
-                if lead <= 3.5:
+                if lead <= 2.5:
+                    color = "#FAA0A0"
+                elif lead > 2.5 and lead <= 6:
                     color = "#FF474C"
-                    formatted[state] = [state_results[state], "R +" + str(lead), color]
-                elif lead > 3.5 and lead <= 7.5:
+                elif lead > 5.5 and lead < 10:
                     color = "#DC143C"
-                    formatted[state] = [state_results[state], "R +" + str(lead), color]
                 else:
                     color = "#8B0000"
-                    formatted[state] = [state_results[state], "R +" + str(lead), color]
+
+                formatted[state] = [state_results[state], "R +" + str(lead), color]
             else:
-                if lead <= 3.5:
+                if lead <= 2.5:
+                    color = "#00FFFF"
+                elif lead > 2.5 and lead <= 6:
                     color = "#89CFF0"
-                    formatted[state] = [state_results[state], "D +" + str(lead), color]
-                elif lead <= 7.5:
+                elif lead > 6 and lead < 10:
                     color = "#6495ED"
-                    formatted[state] = [state_results[state], "D +" + str(lead), color]
                 else:
                     color = "blue"
-                    formatted[state] = [state_results[state], "D +" + str(lead), color]
+
+                formatted[state] = [state_results[state], "D +" + str(lead), color]
 
     return formatted
 
 def main():
-    date_arr = input("Enter a date (yyyy/mm/dd): ").split("/")
+    date_arr = input("Enter a date (mm/dd/yyyy): ").split("/")
     date = (int(date_arr[0]), int(date_arr[1]), int(date_arr[2]))
     presidential_polls = get_new_json(date)
     

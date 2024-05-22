@@ -2,21 +2,27 @@ import './mapstyle/style.css';
 import electionData from './imports/data.json'
 import { useEffect, useState } from 'react';
 
-function colorMap() {
-    const abvs = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MI", "MO", 
-    "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"];
+const state_dict = {"Alabama": ["AL", 9], "Alaska": ["AK", 3], "Arizona": ["AZ", 11], "Arkansas": ["AR", 6], "California": ["CA", 54], "Colorado": ["CO", 10], 
+    "Connecticut": ["CT", 6], "Delaware": ["DE", 3], "Florida": ["FL", 30], "Georgia": ["GA", 16], "Hawaii": ["HI", 4], "Idaho": ["ID", 4], "Illinois": ["IL", 19],
+    "Indiana": ["IN", 9], "Iowa": ["IA", 6], "Kansas": ["KS", 6], "Kentucky": ["KY", 6], "Louisiana": ["LA", 6], "Maine": ["ME", 4], "Maryland": ["MD", 10], 
+    "Massachusetts": ["MA", 11], "Michigan": ["MI", 15], "Minnesota": ["MN", 10], "Mississippi": ["MI", 6], "Missouri": ["MO", 10], "Montana": ["MT", 4], 
+    "Nebraska": ["NE", 5], "Nevada": ["NV", 6], "New Hampshire": ["NH", 4], "New Jersey": ["NJ", 14], "New Mexico": ["NM", 5], "New York": ["NY", 28],
+    "North Carolina": ["NC", 16], "North Dakota": ["ND", 3], "Ohio": ["OH", 17], "Oklahoma": ["OK", 7], "Oregon": ["OR", 8], "Pennsylvania": ["PA", 19],
+    "Rhode Island": ["RI", 4], "South Carolina": ["SC", 9], "South Dakota": ["SD", 3], "Tennessee": ["TN", 11], "Texas": ["TX", 40], "Utah": ["UT", 6],
+    "Vermont": ["VT", 3], "Virginia": ["VA", 13], "Washington": ["WA", 12], "West Virginia": ["WV", 4], "Wisconsin": ["WI", 10], "Wyoming": ["WY", 3]} 
 
-    let index = -1;
+let evs = [0, 0]; 
+
+function colorMap() {
     for (var state in electionData) {
-        const abv = abvs[index];
         if (electionData[state] == "No Polls" || state == "National") {
             // do nothing
         } else {
+            const abv = state_dict[state][0];
             const stateID = document.querySelector('path[data-id=' + abv + ']');
             stateID.style.fill = electionData[state][2];
             stateID.classList.add('path-hover');
         }
-        index++;
     }
     const DCID = document.querySelector('path[data-id=DC]');
     DCID.style.fill = "blue";
@@ -67,6 +73,22 @@ const Map = () => {
          return handleStateHover;
     };
 
+    const calculateEVs = () => {
+        let biden_ev = 3; // starting Biden at 3 to account for DC
+        let trump_ev = 0;
+
+        for (var state in state_dict) {
+            if (electionData[state][1].includes("D")) {
+                biden_ev += state_dict[state][1];
+            } 
+            if (electionData[state][1].includes("R")) {
+                trump_ev += state_dict[state][1];
+            }
+        }
+
+        evs = [biden_ev, trump_ev]; 
+    }
+
     const getLeadColor = (state) => {
         if (electionData[state][1].includes("D")) {
             return '#1e40af';
@@ -75,9 +97,41 @@ const Map = () => {
         }
     }
 
+    const getCandidateStyle = (candidate, evs) => {
+        let style = "text-4xl";
+        if (evs > 269) {
+            style += " font-bold";
+        } 
+        
+        if (candidate == "Biden") {
+            style += " text-blue-500";
+        } else {
+            style += " text-red-500";
+        }
+
+        return style;
+    }
+
     return (
         <>
-            <svg viewBox="-40, -100, 1200,710">
+            <div className="flex justify-center pt-10">                
+                <div className="flex pr-80">
+                    <h1 className={getCandidateStyle("Biden", evs[0])}>Biden: { evs[0] }</h1>
+                </div>
+                <div className="flex pl-80">
+                    <h1 className={getCandidateStyle("Trump", evs[1])}>Trump: { evs[1] }</h1>
+                </div>
+            </div>
+
+            <div className="electoral-bar flex flex-wrap pt-5">
+                <div className="border-2 border-black flex flex-wrap" style={{ width: 1345, height: 42, marginLeft: 200 }}>
+                    <div className="border-2 border-black bg-blue-600" style={{ width: evs[0]*2.5, height: 42, marginLeft: -2, marginTop: -2 }}></div>
+                    <div className="border-2 border-black bg-red-600 flex fixed-right" style={{ width: evs[1]*2.5, height: 42, 
+                        marginLeft: 1343-(2.5*(evs[0]+evs[1])), marginTop: -2}}></div>
+                </div>
+            </div>
+
+            <svg viewBox="-40, -30, 1200, 610" onMouseEnter={calculateEVs()}>
                 <a id="AL" onMouseEnter={(e) => hoverHandler()(e)} onMouseLeave={clearHoveredState}><title>Alabama</title><path data-id="AL" 
                 d="m718.313 344.848.388.776 1.36.874.582 39.796.194 21.839 4.95 29.895.388-.097 4.368.874 1.165-8.639 1.941 4.853 3.3 3.01 6.31-3.69-.68-.582.194.097-4.368-9.997 41.931-6.794 2.815-.486v-.097l-2.62-4.95-.195-7.086-2.135-3.882 1.068-7.571 1.747-1.941-7.183-12.813-13.006-39.601-.097-.195-2.912.486-15.53 2.523-7.765.971-16.307 2.232.097.195z"/>
                 </a>
