@@ -1,9 +1,10 @@
 import electionData from './imports/data.json'
+import may_prediction from './imports/MayPrediction.png'
 
 const Home = () => {
-    const swing = ["Arizona", "Pennsylvania", "Wisconsin"]
-    const leanD = ["Maine: At Large", "Minnesota", "Michigan", "Nebraska: District 1", "New Hampshire", "New Mexico", "Virginia"]
-    const leanR = ["Florida", "Georgia", "Nevada", "North Carolina", "Ohio", "Texas"]
+    let swing = []
+    let leanD = []
+    let leanR = []
 
     const lead_value = electionData["National"][1]
     let lead_style = "font-bold flex justify-center pt-1 text-xl ";
@@ -11,6 +12,26 @@ const Home = () => {
         lead_style += "text-blue-800";
     } else {
         lead_style += "text-red-800";
+    }
+
+    for (var state in electionData) {
+        let state_lead = electionData[state][1]
+        if (state == "National" || electionData[state] == "No Polls") {
+            continue;
+        }
+        else if (parseFloat(state_lead.substring(3)) <= 2.5) {
+            swing.push(state);
+        }
+        else if (state_lead.charAt(0) == "D") {
+            if (parseFloat(state_lead.substring(3)) <= 6) {
+                leanD.push(state);
+            }
+        }
+        else if (state_lead.charAt(0) == "R") {
+            if (parseFloat(state_lead.substring(3)) <= 6) {
+                leanR.push(state);
+            }
+        }
     }
 
     return (
@@ -81,7 +102,7 @@ const Home = () => {
                         <h1 className="flex justify-center text-4xl pb-3 font-bold">My Prediction</h1>
                         <div className="flex flex-wrap">
                             <a href="https://www.270towin.com/maps/NDlOA"></a>
-                            <img src="https://www.270towin.com/map-images/NDlOA.png" width="800"></img>
+                            <img src={may_prediction} width="800"></img>
                         </div>
                         <div className="flex justify-center pt-5 pb-2">
                             <p>For more detailed insight (and an explanation for my predictions), visit the 

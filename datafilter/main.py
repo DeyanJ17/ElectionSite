@@ -1,6 +1,7 @@
 import requests
 import json
 from datetime import datetime
+import math
 
 url = "https://projects.fivethirtyeight.com/polls/polls.json"
 states = ["National", 
@@ -19,9 +20,9 @@ def get_new_json(date):
         polls_data = []
 
     presidential_polls = []
-    year = date[2]
-    month = date[0]
-    day = date[1]
+    year = date.year
+    month = date.month
+    day = date.day
 
     for poll in polls_data:
         poll_start_date = datetime.strptime(poll['startDate'], "%Y-%m-%d").date()
@@ -32,16 +33,26 @@ def get_new_json(date):
     return presidential_polls
 
 def calculate_average(state_name, presidential_polls):
-    total = [0, 0]
-    count = 0
+    biden_avg = 0
+    trump_avg = 0
+    total_weight = 0
+
     for poll in presidential_polls:
         if poll['state'] == state_name:
-            total[0] += float(poll['answers'][0]['pct']) # adding Biden's numbers
-            total[1] += float(poll['answers'][1]['pct']) # adding Trump's numbers
-            count += 1
+            created_at = poll['created_at'].split('-')
+            poll_date = datetime(int(created_at[0]), int(created_at[1]), int(created_at[2]))
+            
+            if poll['sampleSize'] is None:
+                continue
+            else:
+                days_old = (datetime.now()-poll_date).days
+                weight = int(poll['sampleSize'])*math.exp(-days_old/30)
+                total_weight += weight
+                biden_avg += (weight*float(poll['answers'][0]['pct']))
+                trump_avg += (weight*float(poll['answers'][1]['pct']))
 
-    if count > 0:
-        return [round(total[0]/count, 2), round(total[1]/count, 2)]
+    if total_weight > 0:
+        return [round(biden_avg/total_weight, 2), round(trump_avg/total_weight, 2)]
     else:
         return "No Polls"
 
@@ -75,7 +86,7 @@ def get_results(presidential_polls):
                 if lead <= 2.5:
                     color = "#00FFFF"
                 elif lead > 2.5 and lead <= 6:
-                    color = "#89CFF0"
+                    color = "#89CFF7"
                 elif lead > 6 and lead < 10:
                     color = "#6495ED"
                 else:
@@ -85,13 +96,10 @@ def get_results(presidential_polls):
 
     return formatted
 
-def main():
-    date_arr = input("Enter a date (mm/dd/yyyy): ").split("/")
-    date = (int(date_arr[0]), int(date_arr[1]), int(date_arr[2]))
-    presidential_polls = get_new_json(date)
-    
-    path = '../site/src/pages/imports/data.json'
-    with open(path, 'w') as f:
-        json.dump(get_results(presidential_polls), f)
 
-main()
+date = datetime(2024, 3, 12)
+presidential_polls = get_new_json(date)
+    
+path = '../site/src/pages/imports/data.json'
+with open(path, 'w') as f:
+    json.dump(get_results(presidential_polls), f)
