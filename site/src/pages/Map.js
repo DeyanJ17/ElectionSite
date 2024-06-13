@@ -4,20 +4,23 @@ import { useEffect, useState } from 'react';
 
 const state_dict = {"Alabama": ["AL", 9], "Alaska": ["AK", 3], "Arizona": ["AZ", 11], "Arkansas": ["AR", 6], "California": ["CA", 54], "Colorado": ["CO", 10], 
     "Connecticut": ["CT", 6], "Delaware": ["DE", 3], "Florida": ["FL", 30], "Georgia": ["GA", 16], "Hawaii": ["HI", 4], "Idaho": ["ID", 4], "Illinois": ["IL", 19],
-    "Indiana": ["IN", 9], "Iowa": ["IA", 6], "Kansas": ["KS", 6], "Kentucky": ["KY", 6], "Louisiana": ["LA", 6], "Maine": ["ME", 4], "Maryland": ["MD", 10], 
-    "Massachusetts": ["MA", 11], "Michigan": ["MI", 15], "Minnesota": ["MN", 10], "Mississippi": ["MI", 6], "Missouri": ["MO", 10], "Montana": ["MT", 4], 
-    "Nebraska": ["NE", 5], "Nevada": ["NV", 6], "New Hampshire": ["NH", 4], "New Jersey": ["NJ", 14], "New Mexico": ["NM", 5], "New York": ["NY", 28],
-    "North Carolina": ["NC", 16], "North Dakota": ["ND", 3], "Ohio": ["OH", 17], "Oklahoma": ["OK", 7], "Oregon": ["OR", 8], "Pennsylvania": ["PA", 19],
-    "Rhode Island": ["RI", 4], "South Carolina": ["SC", 9], "South Dakota": ["SD", 3], "Tennessee": ["TN", 11], "Texas": ["TX", 40], "Utah": ["UT", 6],
+    "Indiana": ["IN", 9], "Iowa": ["IA", 6], "Kansas": ["KS", 6], "Kentucky": ["KY", 6], "Louisiana": ["LA", 8], "Maine": ["ME", 2], "Maryland": ["MD", 10], 
+    "Massachusetts": ["MA", 11], "Michigan": ["MI", 15], "Minnesota": ["MN", 10], "Mississippi": ["MI", 6], "Missouri": ["MO", 10],  "Montana": ["MT", 4], 
+    "Nebraska": ["NE", 4], "Nevada": ["NV", 6], "New Hampshire": ["NH", 4], "New Jersey": ["NJ", 14], "New Mexico": ["NM", 5], "New York": ["NY", 28], 
+    "North Carolina": ["NC", 16], "North Dakota": ["ND", 3], "Ohio": ["OH", 17], "Oklahoma": ["OK", 7], "Oregon": ["OR", 8], "Pennsylvania": ["PA", 19], 
+    "Rhode Island": ["RI", 4], "South Carolina": ["SC", 9], "South Dakota": ["SD", 3], "Tennessee": ["TN", 11], "Texas": ["TX", 40], "Utah": ["UT", 6], 
     "Vermont": ["VT", 3], "Virginia": ["VA", 13], "Washington": ["WA", 12], "West Virginia": ["WV", 4], "Wisconsin": ["WI", 10], "Wyoming": ["WY", 3]} 
 
-let evs = [0, 0]; 
+let evs = [0, 0]; // Biden, Trump
 
 function colorMap() {
     for (var state in electionData) {
         if (electionData[state] == "No Polls" || state == "National") {
             // do nothing
-        } else {
+        } else if (state == "ME-1" || state == "ME-2" || state == "NE-2") {
+            // handle EV addition below
+        }
+        else {
             const abv = state_dict[state][0];
             const stateID = document.querySelector('path[data-id=' + abv + ']');
             stateID.style.fill = electionData[state][2];
@@ -51,12 +54,20 @@ const Map = () => {
 
             if (stateData[0]["Trump"] > stateData[0]["Biden"]) {
                 stateInfo = `Trump: ${stateData[0]["Trump"]}% 
-                Biden: ${stateData[0]["Biden"]}%
-                Others: ${others}%`;
+                Biden: ${stateData[0]["Biden"]}% 
+                Others: ${others}%
+                
+                Win Probability:
+                Trump - ${stateData[3]["Trump Prob"]} in 100
+                Biden - ${stateData[3]["Biden Prob"]} in 100`;
             } else {
                 stateInfo = `Biden: ${stateData[0]["Biden"]}% 
                 Trump: ${stateData[0]["Trump"]}%
-                Others: ${others}%`;
+                Others: ${others}%
+                
+                Win Probability:
+                Biden - ${stateData[3]["Biden Prob"]} in 100
+                Trump - ${stateData[3]["Trump Prob"]} in 100`;
             }
 
             setHoveredState({ name: stateName, data: stateInfo, lead: stateData[1] });
@@ -74,8 +85,17 @@ const Map = () => {
     };
 
     const calculateEVs = () => {
-        let biden_ev = 3; // starting Biden at 3 to account for DC
+        let biden_ev = 3; // adding DC
         let trump_ev = 0;
+
+        const districtDict = {"ME-2": 1, "NE-2": 1}
+        for (var district in districtDict) {
+            if (electionData[district][0][0] > electionData[district][0][1]) {
+                biden_ev += districtDict[district]
+            } else if (electionData[district][0][0] < electionData[district][0][1]) { // replace this with else when ME-2 data is available
+                trump_ev += districtDict[district]
+            }
+        }
 
         for (var state in state_dict) {
             if (electionData[state][1].includes("D")) {
@@ -114,7 +134,7 @@ const Map = () => {
 
     return (
         <>
-            <div className="flex justify-center pt-10">                
+            <div className="flex justify-center pt-5">                
                 <div className="flex pr-80">
                     <h1 className={getCandidateStyle("Biden", evs[0])}>Biden: { evs[0] }</h1>
                 </div>
@@ -124,14 +144,13 @@ const Map = () => {
             </div>
 
             <div className="electoral-bar flex flex-wrap pt-5">
-                <div className="border-2 border-black flex flex-wrap" style={{ width: 1345, height: 42, marginLeft: 200 }}>
-                    <div className="border-2 border-black bg-blue-600" style={{ width: evs[0]*2.5, height: 42, marginLeft: -2, marginTop: -2 }}></div>
-                    <div className="border-2 border-black bg-red-600 flex fixed-right" style={{ width: evs[1]*2.5, height: 42, 
-                        marginLeft: 1343-(2.5*(evs[0]+evs[1])), marginTop: -2}}></div>
+                <div className="border-2 border-black flex flex-wrap" style={{ width: 1345, height: 42, marginLeft: 250 }}>
+                    <div className="border-2 border-black border-black bg-blue-800" style={{ width: evs[0]*2.5, height: 42, marginLeft: -2, marginTop: -2 }}></div>
+                    <div className="border-2 border-black bg-red-800 flex fixed-right" style={{ width: evs[1]*2.5, height: 42, marginLeft: 1343-(2.5*(evs[0]+evs[1])), marginTop: -2}}></div>
                 </div>
             </div>
 
-            <svg viewBox="-40, -30, 1200, 610" onMouseEnter={calculateEVs()}>
+            <svg viewBox="-40, -30, 1200, 675" onMouseEnter={calculateEVs()}>
                 <a id="AL" onMouseEnter={(e) => hoverHandler()(e)} onMouseLeave={clearHoveredState}><title>Alabama</title><path data-id="AL" 
                 d="m718.313 344.848.388.776 1.36.874.582 39.796.194 21.839 4.95 29.895.388-.097 4.368.874 1.165-8.639 1.941 4.853 3.3 3.01 6.31-3.69-.68-.582.194.097-4.368-9.997 41.931-6.794 2.815-.486v-.097l-2.62-4.95-.195-7.086-2.135-3.882 1.068-7.571 1.747-1.941-7.183-12.813-13.006-39.601-.097-.195-2.912.486-15.53 2.523-7.765.971-16.307 2.232.097.195z"/>
                 </a>
@@ -205,6 +224,10 @@ const Map = () => {
                 <a id="ME" onMouseEnter={(e) => hoverHandler()(e)} onMouseLeave={clearHoveredState}><title>Maine</title><path data-id="ME" 
                 d="M946.8 118.4h-.097l.194.096-.097-.097zm7.182-20.675-.776-1.165v.582l.776.583zm-1.359-1.068v-.97l-.097-.583.097 1.553zm3.495-4.076-.194-.098.097.292.097-.194zm9.706-4.854-.194-1.456-.388.68.582.776zm-2.427.583.097-1.068-1.164.194 1.067.874zm3.592-3.203h-.389v.194l.389-.194zm-4.853 1.456-.874-.195-.097.874.97-.68zm4.95-3.01.873.68-.29-.776-.583.097zm-2.62.098-.874 1.65 1.164-.583-.29-1.067zm-4.175.097-.388.582.291.874.097-1.456zm5.727-3.203-.097-.777-.291.486.388.29zm-.485.388-.874-.777v.68l.874.097zm-5.436 2.232-.194-1.067-.388.873.582.194zm9.221-3.397-1.456 2.136-.097-1.553 1.553-.583zm7.086-6.503-.68-.97-.388.193 1.068.777zm2.62-4.368-.582-.291-.097.291h.68zm1.262-7.57h-.873l.97.29-.097-.29zm1.456.97-.29-1.747-.777-.097 1.067 1.844zm-1.553-1.553-.194-1.844-.68 1.261.874.583zm-56.296 15.239 14.074 33.001.194.68 6.115 7.473v-.097l.97-.29.195-5.533 1.553-1.942.97-5.144-.873-.874 1.65-5.047 5.63-2.62 3.688-4.465 1.359-7.766 5.92-.388-.776-3.98 7.377-2.814.485-4.368 1.747.388 4.854-3.98 2.135-5.144-4.95-4.95-5.242-1.068-1.94-3.98v-2.329l-3.204.97-3.591-1.26v-3.98l-9.707-20.966-7.085-3.689-7.862 6.6-2.136-.387-1.844-3.398-2.524.97-3.591 17.86 1.262 5.824 1.068 11.842-2.815 9.124 1.941 1.456-2.33 4.465-2.523-.388-.194.194z"/>
                 </a>
+                <rect x="930" y="3" width="15" height="15" fill="blue" stroke="black"/>
+                <rect x="968" y="3" width="15" height="15" fill={electionData["ME-2"][2]} stroke="black"/>
+                <text x="935" y="0" font-size="14" text-anchor="middle" fill="black" font-weight="bold">ME-1</text>
+                <text x="975" y="0" font-size="14" text-anchor="middle" fill="black" font-weight="bold">ME-2</text>
 
                 <a id="MD" onMouseEnter={(e) => hoverHandler()(e)} onMouseLeave={clearHoveredState}><title>Maryland</title><path data-id="MD" 
                 d="m911.566 238.272.68-5.241-.583 3.882-.388 1.65-.098.195.292-.098.097-.388zm.485-9.027-.194.097.194.583v1.165-1.845zm-73.38-6.018 2.233 10.192 4.465-6.309 2.232-.485 4.27-3.01 2.913-.679v-1.941l3.397-2.62 5.824.679 2.815 4.853.29.097 4.466 1.165 3.203 2.33 3.106 1.358.291.291.388-.776 1.65-.097 1.36.776-1.263 2.33v.097l-1.844 5.63 6.018 3.882 6.018.291 3.98 1.844-1.65-4.659-5.145-1.747-1.262-3.98 3.203 4.271 2.621.389-2.33-2.33-1.844-6.891.486-3.98-2.039-4.368 2.136-1.747 1.553-5.63-.583 8.348 1.65 2.815 1.554-3.3.873 5.435-1.65 3.98 4.756 1.747-4.077 1.359 2.136 3.98 3.494 1.164 1.941-3.397-.194 4.756 3.3-.097 2.136 2.426h.097l.68-.873 1.94-.874 1.262-.485-.097-.194 2.524-7.474v-.291l-.485-1.941v-.098l-9.221 2.718-8.057-23.004-.388-1.456-1.65.486-6.891 2.135-37.952 10.58-6.892 1.844-1.747.485z"/>
@@ -237,6 +260,8 @@ const Map = () => {
                 <a id="NE" onMouseEnter={(e) => hoverHandler()(e)} onMouseLeave={clearHoveredState}><title>Nebraska</title><path data-id="NE" 
                 d="m572.33 204.688-3.009-3.009-10.58-3.106-3.397-.097-5.144 1.456-6.115-3.882-19.122.194-27.857-.291-32.904-1.068-2.912-.097-.097 2.524-.388 7.57-.874 17.763-.485 10.192-.097 2.523 2.329.097 23.683.874 4.66.194-.389 19.024-.097 1.262 3.689.097 13.103.195h32.613l16.404-.389 35.816-1.359 3.3-.194-.388-.388-2.62-4.659-2.233-1.553-2.427-4.66.097-.581v-.292l-3.008-12.23.582-1.94-3.3-4.563-.194-5.435-3.01-4.756-3.105-9.124-.68-.097-1.844-.195z"/>
                 </a>
+                <rect x="528" y="225" width="15" height="15" fill={electionData["NE-2"][2]} stroke="black" />
+                <text x="520" y="220" font-size="14" fill="black" font-weight="bold">NE-2</text>
 
                 <a id="NV" onMouseEnter={(e) => hoverHandler()(e)} onMouseLeave={clearHoveredState}><title>Nevada</title><path data-id="NV" 
                 d="m294.827 295.83 10.094-62.8 5.145-31.448.582-3.106-2.815-.485-10.968-2.038-27.469-5.436-2.718-.582-2.717-.583-13.686-3.008-24.557-5.824-2.718-.68-.874 3.689-13.2 56.005 11.453 16.5 11.842 16.404 20.966 30.09 15.044 21.16 7.765 10.386 2.524 3.397v-.291l1.553-3.3.097-15.434 4.27-3.59 3.398 3.008 2.233.097 4.27-18.83v-.194l.486-3.106z"/>

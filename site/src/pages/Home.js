@@ -1,5 +1,13 @@
 import electionData from './imports/data.json'
-import may_prediction from './imports/MayPrediction.png'
+import june_prediction from './imports/JunePrediction.png'
+
+function getLink(state) {
+    if (state.includes(" ")) {
+        const stateIndex = state.split(" ");
+        state = stateIndex[0] + "-" + stateIndex[1];
+    }
+    return "https://projects.fivethirtyeight.com/polls/president-general/2024/" + state.toLowerCase()
+}
 
 const Home = () => {
     let swing = []
@@ -38,15 +46,16 @@ const Home = () => {
         <body className="bg-gray-300">
             <div className="flex flex-wrap">
                 <aside id="default-sidebar" class="top-50 left-0 z-80 w-60 h-screen-full bg-gray-500" aria-label="Sidebar">
-                    <h1 className="flex justify-center font-bold bg-emerald-500 text-3xl pt-2 pb-2">Ratings Sidebar</h1>
+                    <h1 className="flex justify-center font-bold bg-emerald-500 text-3xl pt-2 pb-2">Ratings</h1>
                     <div className="pt-2 pb-2 bg-stone-50">
                         <h2 className="font-semibold text-xl pl-2">Swing States</h2>
                         {swing.map((state) =>
                             {
                                 let hoverClass = "pl-4 hover:shadow-xl hover:bg-gray-200"
+                                const link = getLink(state);
                                 return (
                                     <div key={state} className={hoverClass}>
-                                        <a href="#">• {state}</a>
+                                        <a href={link}>• {state}</a>
                                     </div>
                                 );
                             }
@@ -57,9 +66,10 @@ const Home = () => {
                         {leanD.map((state) =>
                             {
                                 let hoverClass = "pl-4 hover:shadow-xl hover:bg-blue-400"
+                                const link = getLink(state);
                                 return (
                                     <div key={state} className={hoverClass}>
-                                        <a href="#">• {state}</a>
+                                        <a href={link}>• {state}</a>
                                     </div>
                                 );
                             }
@@ -70,9 +80,10 @@ const Home = () => {
                         {leanR.map((state) =>
                             {
                                 let hoverClass = "pl-4 hover:shadow-xl hover:bg-red-400"
+                                const link = getLink(state);
                                 return (
                                     <div key={state} className={hoverClass}>
-                                        <a href="#">• {state}</a>
+                                        <a href={link}>• {state}</a>
                                     </div>
                                 );
                             }
@@ -101,8 +112,8 @@ const Home = () => {
                     <div className="pl-60 pt-5">
                         <h1 className="flex justify-center text-4xl pb-3 font-bold">My Prediction</h1>
                         <div className="flex flex-wrap">
-                            <a href="https://www.270towin.com/maps/NDlOA"></a>
-                            <img src={may_prediction} width="800"></img>
+                            <a href="#"></a>
+                            <img src={june_prediction} width="850"></img>
                         </div>
                         <div className="flex justify-center pt-5 pb-2">
                             <p>For more detailed insight (and an explanation for my predictions), visit the 
