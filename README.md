@@ -1,10 +1,8 @@
 # ElectionSite
 
-A fun project using React and TailwindCSS to display current polls (from 538 by ABC News) in each state on an interactive map. This project uses Python for backend code and handles data in a JSON format.
+A fun project using React and TailwindCSS to display current polls (from 538 by ABC News) in each state on an interactive map, which further includes my model's predictions for each state (and the election overall). This site also has my prediction for the election and (hopefully) a blog with insights into recent developments.
 
-Also found on this site is my prediction for the Presidential election and a blog where I explain my reasoning.
-
-This project's front and backends are not automatically connected. 
+This project uses Python for backend code and handles data in a JSON format. These ends are not automatically connected. 
 
 ### To Run:
    1. cd datafilter
