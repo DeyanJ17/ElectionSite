@@ -1,5 +1,6 @@
-import electionData from './imports/data.json'
-import june_prediction from './imports/JunePrediction.png'
+import electionData from './imports/data.json';
+import prediction from './imports/JulyPrediction.png';
+import simulation from './imports/simulation.json';
 
 function getLink(state) {
     if (state.includes(" ")) {
@@ -22,7 +23,7 @@ const Home = () => {
         lead_style += "text-red-800";
     }
 
-    for (var state in electionData) {
+    for (let state in electionData) {
         let state_lead = electionData[state][1]
         if (state == "National" || electionData[state] == "No Polls") {
             continue;
@@ -62,7 +63,7 @@ const Home = () => {
                         )}
                     </div>
                     <div className="pt-2 pb-2 bg-blue-200">
-                        <h2 className="font-semibold text-xl pl-2">Lean Biden States</h2>
+                        <h2 className="font-semibold text-xl pl-2">Lean Harris States</h2>
                         {leanD.map((state) =>
                             {
                                 let hoverClass = "pl-4 hover:shadow-xl hover:bg-blue-400"
@@ -94,26 +95,34 @@ const Home = () => {
                 <div>
                     <div className="flex justify-center pl-60 pt-10">
                         <div className="flex flex-col px-6 py-5 border-2 border-black bg-emerald-300">
-                            <h1 className="font-bold text-2xl">National Average</h1>
+                            <h1 className="font-bold text-2xl flex justify-center">National Average</h1>
                             <div className="flex flex-wrap justify-center pt-2">
-                                <h1 className="font-semibold text-blue-600">Biden (D)</h1>: {electionData["National"][0]["Biden"]}%
+                                <h1 className="font-semibold text-blue-600">Harris (D)</h1>: {electionData["National"][0]["Harris"]}%
                             </div>
                             <div className="flex flex-wrap justify-center">
                                 <h1 className="font-semibold text-red-600">Trump (R)</h1>: {electionData["National"][0]["Trump"]}%
                             </div>
                             <div className="flex flex-wrap justify-center">
-                                <h1 className="font-semibold text-gray-600">Others</h1>: {(100-(electionData["National"][0]["Biden"]+electionData["National"][0]["Trump"])).toFixed(2)}%
+                                <h1 className="font-semibold text-gray-600">Others</h1>: {(100-(electionData["National"][0]["Harris"]+electionData["National"][0]["Trump"])).toFixed(2)}%
                             </div>
                             <div className={lead_style}>
                                 {electionData["National"][1]}
                             </div>
+                            <div className="pt-3">
+                                <h1 className="font-bold text-2xl flex justify-center">Model Odds</h1>
+                                <div className="flex justify-center">
+                                    <h1 className="font-semibold text-blue-600">Harris</h1>: {simulation[0]} in 100
+                                    <h1 className="font-semibold text-red-600 pl-4">Trump</h1>: {simulation[1]} in 100
+                                </div>
+                            </div>
                         </div>
                     </div>
+
                     <div className="pl-60 pt-5">
                         <h1 className="flex justify-center text-4xl pb-3 font-bold">My Prediction</h1>
                         <div className="flex flex-wrap">
                             <a href="#"></a>
-                            <img src={june_prediction} width="850"></img>
+                            <img src={prediction} width="850"></img>
                         </div>
                         <div className="flex justify-center pt-5 pb-2">
                             <p>For more detailed insight (and an explanation for my predictions), visit the 

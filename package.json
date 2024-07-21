@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "js-big-decimal": "^2.0.7"
+  }
+}

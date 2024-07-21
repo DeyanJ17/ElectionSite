@@ -1,7 +1,6 @@
-import requests
-import json
+import requests, json
+import math, random
 from datetime import datetime
-import math
 
 url = "https://projects.fivethirtyeight.com/polls/polls.json"
 states = ["National", 
@@ -26,7 +25,7 @@ def get_new_json(date):
     for poll in polls_data:
         poll_start_date = datetime.strptime(poll['startDate'], "%Y-%m-%d").date()
         comparison_date = datetime(year, month, day).date()
-        if poll['type'] == 'president-general' and (poll['answers'][0]['choice'] == "Biden" and poll['answers'][1]['choice'] == "Trump") and poll_start_date >= comparison_date:
+        if poll['type'] == 'president-general' and (poll['answers'][0]['choice'] == "Harris" and poll['answers'][1]['choice'] == "Trump") and poll_start_date >= comparison_date:
             presidential_polls = presidential_polls + [poll]
     
     return presidential_polls
@@ -47,7 +46,7 @@ def calculate_weight(days_old, poll):
         
         sponsor = 0
         for i in range(len(sponsor_dict)):
-            if sponsor_dict['partisan'] == "Robert F. Kennedy": # RFK does individual matchup polls with himself and Biden/Trump
+            if sponsor_dict['partisan'] == "Robert F. Kennedy": # RFK does individual matchup polls with himself and Harris/Trump
                 sponsor += 0.15
             elif sponsor_dict['partisan'] == "Republican Party":
                 sponsor += 0.4
@@ -61,8 +60,8 @@ def calculate_weight(days_old, poll):
     return (size*date*sponsor)
 
 def calculate_average(state_name, presidential_polls):
-    avgs = [0,0] # Biden Avg, Trump Avg
-    biden_avg = 0
+    avgs = [0,0] # Harris Avg, Trump Avg
+    Harris_avg = 0
     trump_avg = 0
 
     total_weight = 0
@@ -92,7 +91,7 @@ def calculate_average(state_name, presidential_polls):
             try:
                 if poll['district'] == "2": # check if this is a ME-2 or NE-2 poll
                     district_weight += weight
-                    biden_avg += weight*float(poll['answers'][0]['pct'])
+                    Harris_avg += weight*float(poll['answers'][0]['pct'])
                     trump_avg += weight*float(poll['answers'][1]['pct'])
             except:
                 total_weight += weight
@@ -100,7 +99,7 @@ def calculate_average(state_name, presidential_polls):
                 avgs[1] += weight*float(poll['answers'][1]['pct'])
 
     if district_weight != 0:
-        district_avgs[state][0] = round(biden_avg/district_weight, 2)
+        district_avgs[state][0] = round(Harris_avg/district_weight, 2)
         district_avgs[state][1] = round(trump_avg/district_weight, 2)
 
     if total_weight > 0:
@@ -141,7 +140,7 @@ def get_state_multiplier(state, lead, difference):
     if state == "Arizona" or state == "Georgia" or state == "Nevada" or state == "North Carolina": # Sunbelt States
         if trump_leads: # Trump's support increased from inroads with minorities, who are less likely to turn out
             if "R" in spread_2020[state]: 
-                multiplier = 0.05*(difference+lead)
+                multiplier = 0.1*(difference+lead)
             else: # Suburban voters/minority voters underpolled in 2020
                 multiplier = 0.2*(difference+lead)
             
@@ -157,14 +156,14 @@ def get_state_multiplier(state, lead, difference):
     elif state == "Florida" or state == "Texas": # States where Latino populations lean more conservative
         if "R" in spread_2020[state]: 
             if trump_leads: # Trump's support increased from inroads with minorities
-                multiplier = abs(0.05*(difference+lead))
+                multiplier = abs(0.2*(difference+lead))
             else: # Suburban voters/minority voters underpolled in 2020
                 multiplier = abs(0.1*(difference+lead))
             
             return -multiplier
         else: 
             if "R" in spread_2020[state]: # Risk of underpolling Trump supporters and overpolling college educated/suburban voters
-                multiplier = 0.45*(difference+lead)
+                multiplier = 0.5*(difference+lead)
                 return -multiplier
             else: # Suburban voters/minority voters underpolled in 2020
                 multiplier = 0.075*(difference+lead) 
@@ -191,10 +190,9 @@ def get_state_multiplier(state, lead, difference):
         return 1
 
 def model_prediction(lead, state):
-    biden_chance = 50
-
     trump_leads = get_trump_leads(lead)
     lead = abs(lead)
+    harris_chance = 50
 
     if lead <= 2.5:
         multiplier = 1.6
@@ -211,29 +209,37 @@ def model_prediction(lead, state):
 
     lead *= multiplier    
     if trump_leads:
-        biden_chance -= lead
+        harris_chance -= lead
     else:
-        biden_chance += lead
+        harris_chance += lead
 
-    if state != "National" and state in spread_2020:
-        difference = float(spread_2020[state].split("+")[1])
+    if state != "National":
+        pvi_arr = cook_pvi[state].split("+")
+        margin = int(pvi_arr[1])
 
-        biden_chance += get_state_multiplier(state, lead, difference)
+        if "R" in pvi_arr[0]:
+            harris_chance -= margin
+        else:
+            harris_chance += margin
+    
+        if state in spread_2020:
+            difference = float(spread_2020[state].split("+")[1])
+            harris_chance += get_state_multiplier(state, lead, difference)
 
-    if state == "Ohio": # Adjusting for Trump's 5+ margin in 2020
-        biden_chance -= 10
-    elif state == "Florida" or state == "Texas": # Adjusting for Trump 3+ margin in 2020
-        biden_chance -= 5
+            if state == "Ohio": # Adjusting for Trump's 5+ margin in 2020
+                harris_chance -= 10
+            elif state == "Florida" or state == "Texas": # Adjusting for Trump 3+ margin in 2020
+                harris_chance -= 5
 
-    if state == "New Mexico" or state == "Virginia": # Adjusting for Biden's 10+ margin in 2020
-        biden_chance += 7
-    elif state == "Maine" or state == "New Hampshire": # Adjusting for Biden's 5+ margin in 2020
-        biden_chance += 5
+            if state == "New Mexico" or state == "Virginia": # Adjusting for Harris's 10+ margin in 2020
+                harris_chance += 10
+            elif state == "Maine" or state == "Minnesota" or state == "New Hampshire": # Adjusting for Harris's 5+ margin in 2020
+                harris_chance += 5
 
-    biden_chance = max(min(biden_chance, 99), 1)
-    trump_chance = 100-biden_chance
+    harris_chance = max(min(harris_chance, 99), 1)
+    trump_chance = max(min(100-harris_chance, 99), 1)
 
-    return {"Biden Prob": round(biden_chance), "Trump Prob": round(trump_chance)}
+    return {"Harris Prob": round(harris_chance), "Trump Prob": round(trump_chance)}
 
 def get_results(presidential_polls):
     formatted = {}
@@ -244,7 +250,7 @@ def get_results(presidential_polls):
             formatted[state] = "No Polls"
         else:
             candidate_pct = {}
-            candidate_pct["Biden"] = result[0]
+            candidate_pct["Harris"] = result[0]
             candidate_pct["Trump"] = result[1]
             state_results[state] = candidate_pct
 
@@ -266,21 +272,75 @@ def get_results(presidential_polls):
 def main():
     presidential_polls = get_new_json(date)
     path = '../site/src/pages/imports/data.json'
+    results = get_results(presidential_polls)
     with open(path, 'w') as f:
-        json.dump(get_results(presidential_polls), f)
+        json.dump(results, f)
 
+    simulate_election(results)
+
+
+# Variables for simulate_election()
+
+state_dict = {"Alabama": ["AL", 9], "Alaska": ["AK", 3], "Arizona": ["AZ", 11], "Arkansas": ["AR", 6], "California": ["CA", 54], "Colorado": ["CO", 10], 
+    "Connecticut": ["CT", 6], "Delaware": ["DE", 3], "Florida": ["FL", 30], "Georgia": ["GA", 16], "Hawaii": ["HI", 4], "Idaho": ["ID", 4], "Illinois": ["IL", 19],
+    "Indiana": ["IN", 9], "Iowa": ["IA", 6], "Kansas": ["KS", 6], "Kentucky": ["KY", 6], "Louisiana": ["LA", 8], "Maine": ["ME", 2], "Maryland": ["MD", 10], 
+    "Massachusetts": ["MA", 11], "Michigan": ["MI", 15], "Minnesota": ["MN", 10], "Mississippi": ["MI", 6], "Missouri": ["MO", 10],  "Montana": ["MT", 4], 
+    "Nebraska": ["NE", 4], "Nevada": ["NV", 6], "New Hampshire": ["NH", 4], "New Jersey": ["NJ", 14], "New Mexico": ["NM", 5], "New York": ["NY", 28], 
+    "North Carolina": ["NC", 16], "North Dakota": ["ND", 3], "Ohio": ["OH", 17], "Oklahoma": ["OK", 7], "Oregon": ["OR", 8], "Pennsylvania": ["PA", 19], 
+    "Rhode Island": ["RI", 4], "South Carolina": ["SC", 9], "South Dakota": ["SD", 3], "Tennessee": ["TN", 11], "Texas": ["TX", 40], "Utah": ["UT", 6], 
+    "Vermont": ["VT", 3], "Virginia": ["VA", 13], "Washington": ["WA", 12], "West Virginia": ["WV", 4], "Wisconsin": ["WI", 10], "Wyoming": ["WY", 3]} 
+
+red_states = ["Alabama", "Arkansas", "Indiana", "Idaho", "Kansas", "Kentucky", "Louisiana", "Mississippi", "South Carolina", "Wyoming"]
+
+def simulate_election(election_data):
+    harris_wins = 0
+
+    for i in range(1000):
+        # adding electoral votes from states without polls
+        harris_votes = 3  # adding DC EVs
+        trump_votes = 0
+
+        for state in state_dict:
+            if election_data[state] == "No Polls":
+                if state not in red_states:
+                    harris_votes += state_dict[state][1]
+            elif state in ["ME-1", "ME-2", "NE-2"]:
+                if state == "ME-2" and (election_data["ME-1"][0][0] > election_data["ME-2"][0][1]):
+                    harris_votes += 1
+                elif state == "ME-2":
+                    pass # don't add to Harris as this should go to Trump
+                elif state == "NE-2" and (election_data["NE-2"][0][0] > election_data["NE-2"][0][1]):
+                    harris_votes += 1
+            else:
+                random_num = random.random()*100
+                if election_data[state][3]["Harris Prob"] >= random_num:
+                    harris_votes += state_dict[state][1]
+                else:
+                    trump_votes += state_dict[state][1]
+
+        if harris_votes >= 270:
+            harris_wins += 1
+
+    harris_prob = round((harris_wins/1000)*100)
+
+    path = '../site/src/pages/imports/simulation.json'
+    with open(path, 'w') as f:
+        json.dump([harris_prob, 100-harris_prob], f)
 
 # Global Variables for Simplicity
-date = datetime(2024, 3, 12)
+date = datetime(2024, 7, 21)
 district_avgs = {"Maine": [0,0], "Nebraska":[0,0]}
 
 spread_2020 = {"Arizona": "R +0.6", "Florida": "R +4.2", "Georgia": "D +1.3", "Maine": "R +3.93", "Michigan": "R +1.4", "Minnesota": "D +2.9", 
                     "New Hampshire": "R +3.75", "New Mexico": "R +0.91", "Nevada": "R +2.88", "North Carolina": "R +1.1", "Pennsylvania": "R +3.53", "Texas": "R +4.5", 
                     "Virginia": "R +1.6", "Wisconsin": "R +6.0"} # Difference between RCP average and actual results (used 538 averages for ME, NH, NM, NV, PA, VA)
-                                                               # NV coded as R +0.0 because Trump's 2024 support comes from inroads with minorities 
 
-swing_regions = {"Rustbelt": ["Indiana", "Michigan", "Pennsylvania", "Ohio", "Wisconsin"], 
-                 "Sunbelt": ["Arizona", "Florida", "Georgia", "Nevada", "New Mexico", "North Carolina", "Texas"], 
-                 "Mid-Atlantic": ["Pennsylvania", "North Carolina", "Virginia"], "Upper Midwest": ["Michigan", "Minnesota", "Wisconsin"]}
+cook_pvi = {"Alabama": "R +15", "Alaska": "R +8", "Arizona": "R +2", "Arkansas": "R +16", "California": "D +13", "Colorado": "D +4", "Connecticut": "D +7", "Delaware": "D +7", 
+            "Florida": "R +3", "Georgia": "R +3", "Hawaii": "D +14", "Idaho": "R +18", "Illinois": "D +7", "Indiana": "R +11", "Iowa": "R +6", "Kansas": "R +10", 
+            "Kentucky": "R +16", "Louisiana": "R +12", "Maine": "D +2", "ME-1": "D +9", "Maryland": "D +14", "Massachusetts": "D +15", "Michigan": "R +1", 
+            "Minnesota": "D +1", "Mississippi": "R +11", "Missouri": "R +10", "Montana": "R +11", "Nebraska": "R+ 13", "Nevada": "R +1", "New Hampshire": "D +1", 
+            "New Jersey": "D +6", "New Mexico": "D +3", "New York": "D +10", "North Carolina": "R +3", "North Dakota": "R +20", "Ohio": "R +6", "Oklahoma": "R +20", 
+            "Oregon": "D +6", "Pennsylvania": "R +2", "Rhode Island": "D +8", "South Carolina": "R +8", "South Dakota": "R +16", "Tennessee": "R +14", "Texas": "R +5", 
+            "Utah": "R +13", "Vermont": "D +16", "Virginia": "D +3", "Washington": "D +8", "West Virginia": "R +22", "Wisconsin": "R +2", "Wyoming": "R +25"}
 
 main()

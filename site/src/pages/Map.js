@@ -1,28 +1,19 @@
 import './mapstyle/style.css';
-import electionData from './imports/data.json'
-import { useEffect, useState } from 'react';
+import electionData from './imports/data.json';
+import stateDict from './imports/states.json';
+import { useEffect, useState } from 'react'; 
 
-const state_dict = {"Alabama": ["AL", 9], "Alaska": ["AK", 3], "Arizona": ["AZ", 11], "Arkansas": ["AR", 6], "California": ["CA", 54], "Colorado": ["CO", 10], 
-    "Connecticut": ["CT", 6], "Delaware": ["DE", 3], "Florida": ["FL", 30], "Georgia": ["GA", 16], "Hawaii": ["HI", 4], "Idaho": ["ID", 4], "Illinois": ["IL", 19],
-    "Indiana": ["IN", 9], "Iowa": ["IA", 6], "Kansas": ["KS", 6], "Kentucky": ["KY", 6], "Louisiana": ["LA", 8], "Maine": ["ME", 2], "Maryland": ["MD", 10], 
-    "Massachusetts": ["MA", 11], "Michigan": ["MI", 15], "Minnesota": ["MN", 10], "Mississippi": ["MI", 6], "Missouri": ["MO", 10],  "Montana": ["MT", 4], 
-    "Nebraska": ["NE", 4], "Nevada": ["NV", 6], "New Hampshire": ["NH", 4], "New Jersey": ["NJ", 14], "New Mexico": ["NM", 5], "New York": ["NY", 28], 
-    "North Carolina": ["NC", 16], "North Dakota": ["ND", 3], "Ohio": ["OH", 17], "Oklahoma": ["OK", 7], "Oregon": ["OR", 8], "Pennsylvania": ["PA", 19], 
-    "Rhode Island": ["RI", 4], "South Carolina": ["SC", 9], "South Dakota": ["SD", 3], "Tennessee": ["TN", 11], "Texas": ["TX", 40], "Utah": ["UT", 6], 
-    "Vermont": ["VT", 3], "Virginia": ["VA", 13], "Washington": ["WA", 12], "West Virginia": ["WV", 4], "Wisconsin": ["WI", 10], "Wyoming": ["WY", 3]} 
-
-let evs = [0, 0]; // Biden, Trump
+let evs = [0, 0]; // Harris, Trump
 
 function colorMap() {
-    for (var state in electionData) {
+    for (let state in electionData) {
         if (electionData[state] == "No Polls" || state == "National") {
             // do nothing
         } else if (state == "ME-1" || state == "ME-2" || state == "NE-2") {
             // handle EV addition below
         }
         else {
-            const abv = state_dict[state][0];
-            const stateID = document.querySelector('path[data-id=' + abv + ']');
+            const stateID = document.querySelector('path[data-id=' + stateDict[state][0] + ']');
             stateID.style.fill = electionData[state][2];
             stateID.classList.add('path-hover');
         }
@@ -47,27 +38,33 @@ const Map = () => {
 
         if (electionData[stateName] == "No Polls") {
             setHoveredState({ name: stateName, data: "No Polls" });
-        }    
-        else {
+        } else {
             let stateInfo = '';
-            const others = (100-(stateData[0]["Biden"]+stateData[0]["Trump"])).toFixed(2);
+            let winProb = '';
+            const others = (100-(stateData[0]["Harris"]+stateData[0]["Trump"])).toFixed(2);
 
-            if (stateData[0]["Trump"] > stateData[0]["Biden"]) {
-                stateInfo = `Trump: ${stateData[0]["Trump"]}% 
-                Biden: ${stateData[0]["Biden"]}% 
-                Others: ${others}%
-                
-                Win Probability:
-                Trump - ${stateData[3]["Trump Prob"]} in 100
-                Biden - ${stateData[3]["Biden Prob"]} in 100`;
+            if (stateData[3]["Trump Prob"] > stateData[3]["Harris Prob"]) {
+                winProb = ["Trump - " + stateData[3]["Trump Prob"] + " in 100", "Harris - " + stateData[3]["Harris Prob"] + " in 100"];
             } else {
-                stateInfo = `Biden: ${stateData[0]["Biden"]}% 
-                Trump: ${stateData[0]["Trump"]}%
+                winProb = ["Harris - " + stateData[3]["Harris Prob"] + " in 100", "Trump - " + stateData[3]["Trump Prob"] + " in 100"]
+            }
+
+            if (stateData[0]["Trump"] > stateData[0]["Harris"]) {
+                stateInfo = `Trump: ${stateData[0]["Trump"].toFixed(2)}% 
+                Harris: ${stateData[0]["Harris"].toFixed(2)}% 
                 Others: ${others}%
                 
                 Win Probability:
-                Biden - ${stateData[3]["Biden Prob"]} in 100
-                Trump - ${stateData[3]["Trump Prob"]} in 100`;
+                ${winProb[0]}
+                ${winProb[1]}`;
+            } else {
+                stateInfo = `Harris: ${stateData[0]["Harris"].toFixed(2)}% 
+                Trump: ${stateData[0]["Trump"].toFixed(2)}%
+                Others: ${others}%
+                
+                Win Probability:
+                ${winProb[0]}
+                ${winProb[1]}`;
             }
 
             setHoveredState({ name: stateName, data: stateInfo, lead: stateData[1] });
@@ -85,28 +82,28 @@ const Map = () => {
     };
 
     const calculateEVs = () => {
-        let biden_ev = 3; // adding DC
-        let trump_ev = 0;
+        let harrisEV = 4; // adding DC and ME-1
+        let trumpEV = 0;
 
         const districtDict = {"ME-2": 1, "NE-2": 1}
-        for (var district in districtDict) {
+        for (let district in districtDict) {
             if (electionData[district][0][0] > electionData[district][0][1]) {
-                biden_ev += districtDict[district]
+                harrisEV += districtDict[district]
             } else if (electionData[district][0][0] < electionData[district][0][1]) { // replace this with else when ME-2 data is available
-                trump_ev += districtDict[district]
+                trumpEV += districtDict[district]
             }
         }
 
-        for (var state in state_dict) {
+        for (let state in stateDict) {
             if (electionData[state][1].includes("D")) {
-                biden_ev += state_dict[state][1];
+                harrisEV += stateDict[state][1];
             } 
             if (electionData[state][1].includes("R")) {
-                trump_ev += state_dict[state][1];
+                trumpEV += stateDict[state][1];
             }
         }
 
-        evs = [biden_ev, trump_ev]; 
+        evs = [harrisEV, trumpEV]; 
     }
 
     const getLeadColor = (state) => {
@@ -119,11 +116,11 @@ const Map = () => {
 
     const getCandidateStyle = (candidate, evs) => {
         let style = "text-4xl";
-        if (evs > 269) {
+        if (evs >= 270) {
             style += " font-bold";
         } 
         
-        if (candidate == "Biden") {
+        if (candidate == "Harris") {
             style += " text-blue-500";
         } else {
             style += " text-red-500";
@@ -135,11 +132,12 @@ const Map = () => {
     return (
         <>
             <div className="flex justify-center pt-5">                
-                <div className="flex pr-80">
-                    <h1 className={getCandidateStyle("Biden", evs[0])}>Biden: { evs[0] }</h1>
+                <div className="flex pl-20 pr-40">
+                    <h1 className={getCandidateStyle("Harris", evs[0])}>Harris: {evs[0]}</h1>
+                    
                 </div>
-                <div className="flex pl-80">
-                    <h1 className={getCandidateStyle("Trump", evs[1])}>Trump: { evs[1] }</h1>
+                <div className="flex pl-80 pr-10">
+                    <h1 className={getCandidateStyle("Trump", evs[1])}>Trump: {evs[1]}</h1>
                 </div>
             </div>
 
