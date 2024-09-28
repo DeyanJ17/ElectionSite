@@ -77,14 +77,12 @@ def calculate_average(state_name, presidential_polls):
 
             national_factor = 1
             if state != "National":
-                if days_old >= 15:
-                    national_factor = 1.5
-                elif days_old >= 10:
-                    national_factor = 1.35
-                elif days_old >= 5:
+                if days_old >= 20:
                     national_factor = 1.1
-                else:
-                    national_factor = 1
+                elif days_old >= 10:
+                    national_factor = 1.25
+                elif days_old >= 5:
+                    national_factor = 1.5
 
             weight = weight*national_factor
 
@@ -138,12 +136,8 @@ def get_trump_leads(lead):
 def get_state_multiplier(state, lead, difference):
     trump_leads = get_trump_leads(lead)
     if state == "Arizona" or state == "Georgia" or state == "Nevada" or state == "North Carolina": # Sunbelt States
-        if trump_leads: # Trump's support increased from inroads with minorities, who are less likely to turn out
-            if "R" in spread_2020[state]: 
-                multiplier = 0.1*(difference+lead)
-            else: # Suburban voters/minority voters underpolled in 2020
-                multiplier = 0.2*(difference+lead)
-            
+        if trump_leads: # Suburban voters/minority voters underpolled in 2020
+            multiplier = 0.025*(difference+lead)
             return -multiplier
         else: 
             if "R" in spread_2020[state]: # Risk of underpolling Trump supporters and overpolling college educated/suburban voters
@@ -154,38 +148,29 @@ def get_state_multiplier(state, lead, difference):
                 return multiplier
 
     elif state == "Florida" or state == "Texas": # States where Latino populations lean more conservative
-        if "R" in spread_2020[state]: 
-            if trump_leads: # Trump's support increased from inroads with minorities
-                multiplier = abs(0.2*(difference+lead))
-            else: # Suburban voters/minority voters underpolled in 2020
-                multiplier = abs(0.1*(difference+lead))
-            
+        if "R" in spread_2020[state]: # Suburban voters/minority voters underpolled in 2020
+            multiplier = abs(0.3*(difference+lead))
             return -multiplier
         else: 
             if "R" in spread_2020[state]: # Risk of underpolling Trump supporters and overpolling college educated/suburban voters
-                multiplier = 0.5*(difference+lead)
+                multiplier = 0.75*(difference+lead)
                 return -multiplier
             else: # Suburban voters/minority voters underpolled in 2020
-                multiplier = 0.075*(difference+lead) 
+                multiplier = 0.025*(difference+lead) 
                 return multiplier
 
     elif state == "Michigan" or state == "Minnesota" or state == "Pennsylvania" or state == "Wisconsin": # Rustbelt States
-        if trump_leads: # Trump's support increased from minorities; Trump voters undersampled in 2020
-            if "R" in spread_2020[state]:
-                multiplier = abs(0.1*(difference+lead))
-                return -multiplier
-            else: # Suburban voters/minority voters underpolled in 2020
-                multiplier = abs(0.2*(difference+lead))
-                return multiplier
-
+        if trump_leads:  # Suburban voters/minority voters underpolled in 2020
+            multiplier = abs(0.1*(difference+lead))
+            return multiplier
         else: # Risk of underpolling Trump supporters and overpolling college educated/suburban voters
             if "R" in spread_2020[state]:
-                multiplier = 0.1*(difference+lead)
+                multiplier = 0.3*(difference+lead)
                 return -multiplier
             else: # Suburban voters/minority voters underpolled in 2020
-                multiplier = 0.05*(difference+lead) 
+                multiplier = 0.025*(difference+lead) 
                 return multiplier
-
+            
     else:
         return 1
 
@@ -195,11 +180,11 @@ def model_prediction(lead, state):
     harris_chance = 50
 
     if lead <= 2.5:
-        multiplier = 1.6
+        multiplier = 1.35
     elif lead <= 4:
-        multiplier = 1.75
+        multiplier = 1.5
     elif lead <= 6:
-        multiplier = 1.85
+        multiplier = 1.75
     elif lead <= 8:
         multiplier = 1.9
     elif lead < 10:
@@ -226,14 +211,11 @@ def model_prediction(lead, state):
             difference = float(spread_2020[state].split("+")[1])
             harris_chance += get_state_multiplier(state, lead, difference)
 
-            if state == "Ohio": # Adjusting for Trump's 5+ margin in 2020
+            if state == "Ohio" or state == "Texas": # Adjusting for Trump's +5 margin in 2020
                 harris_chance -= 10
-            elif state == "Florida" or state == "Texas": # Adjusting for Trump 3+ margin in 2020
-                harris_chance -= 5
-
-            if state == "New Mexico" or state == "Virginia": # Adjusting for Harris's 10+ margin in 2020
-                harris_chance += 10
-            elif state == "Maine" or state == "Minnesota" or state == "New Hampshire": # Adjusting for Harris's 5+ margin in 2020
+           
+            # Adjusting for D +5 margin in 2020
+            if state == "Maine" or state == "Minnesota" or state == "New Mexico" or state == "New Hampshire" or state == "Virginia": 
                 harris_chance += 5
 
     harris_chance = max(min(harris_chance, 99), 1)
@@ -290,7 +272,7 @@ state_dict = {"Alabama": ["AL", 9], "Alaska": ["AK", 3], "Arizona": ["AZ", 11], 
     "Rhode Island": ["RI", 4], "South Carolina": ["SC", 9], "South Dakota": ["SD", 3], "Tennessee": ["TN", 11], "Texas": ["TX", 40], "Utah": ["UT", 6], 
     "Vermont": ["VT", 3], "Virginia": ["VA", 13], "Washington": ["WA", 12], "West Virginia": ["WV", 4], "Wisconsin": ["WI", 10], "Wyoming": ["WY", 3]} 
 
-red_states = ["Alabama", "Arkansas", "Indiana", "Idaho", "Kansas", "Kentucky", "Louisiana", "Mississippi", "South Carolina", "Wyoming"]
+red_states = ["Alabama", "Idaho", "Kansas", "Kentucky", "Louisiana", "Mississippi", "North Dakota", "South Carolina", "South Dakota", "Wyoming"]
 
 def simulate_election(election_data):
     harris_wins = 0

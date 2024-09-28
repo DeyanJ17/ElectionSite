@@ -1,5 +1,5 @@
 import electionData from './imports/data.json';
-import prediction from './imports/JulyPrediction.png';
+import prediction from './imports/AugustPrediction.png';
 import simulation from './imports/simulation.json';
 
 function getLink(state) {
@@ -125,9 +125,6 @@ const Home = () => {
                             <img src={prediction} width="850"></img>
                         </div>
                         <div className="flex justify-center pt-5 pb-2">
-                            <p>For more detailed insight (and an explanation for my predictions), visit the 
-                                <a href="blogdisplay" className="text-blue-600 text-underline"> blogs</a> tab.
-                            </p>
                         </div>
                     </div>
                 </div>

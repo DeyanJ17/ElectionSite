@@ -9,15 +9,12 @@ const Navbar = () => {
                     <a className="text-3xl font-bold pr-5" href="/">Dashboard</a>
                 </div>
                 <div className="flex pl-40">
-                    <ul className="flex flex-wrap gap-20 pt-2">
+                    <ul className="flex flex-wrap gap-40 pt-2">
                         <li>
                             <a className="text-lg font-semibold hover:text-blue-800" href="about">About</a>
                         </li>
                         <li>
                             <a className="text-lg font-semibold hover:text-blue-800" href="map">Interactive Map</a>
-                        </li>
-                        <li>
-                            <a className="text-lg font-semibold hover:text-blue-800" href="blogdisplay">Blogs</a>
                         </li>
                     </ul>
                 </div>
